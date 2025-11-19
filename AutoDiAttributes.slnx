@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/SolutionItems/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="AutoDiAttributes.Generator/AutoDiAttributes.Generator.csproj" />
+  <Project Path="AutoDiAttributes/AutoDiAttributes.csproj" />
+</Solution>
