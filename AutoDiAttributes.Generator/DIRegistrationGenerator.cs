@@ -16,15 +16,17 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
 		var registrations = context.SyntaxProvider
-			.CreateSyntaxProvider(predicate: static (node, _) => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0,
+			.CreateSyntaxProvider(predicate: static (node, _) => node is ClassDeclarationSyntax {
+					AttributeLists.Count: > 0
+				},
 				transform: static (ctx, _) => GetRegistration(ctx))
-			.Where(static r => r is not null)!;
+			.Where(static r => r is { });
 
 		var collected = registrations.Collect();
 
 		var compilationAndCollected = context.CompilationProvider.Combine(collected);
 
-		context.RegisterSourceOutput(compilationAndCollected, static (spc, data) => EmitSource(spc, data.Left, data.Right!));
+		context.RegisterSourceOutput(compilationAndCollected, static (spc, data) => EmitSource(spc, data.Left, data.Right));
 	}
 
 	private static ServiceRegistration? GetRegistration(GeneratorSyntaxContext ctx) {
@@ -49,7 +51,7 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			// Lifetime
 			var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw ? (InjectServiceLifetime)raw : InjectServiceLifetime.Transient;
 
-			return new ServiceRegistration(serviceTypeName, implTypeName, lifetime);
+			return new(serviceTypeName, implTypeName, lifetime);
 		}
 		return null;
 	}
@@ -113,17 +115,17 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 		return sb.ToString();
 	}
 
-	private sealed class ServiceRegistration(string ServiceType, string ImplType, InjectServiceLifetime Lifetime) {
+	private sealed class ServiceRegistration(string serviceType, string implType, InjectServiceLifetime lifetime) {
 		public string ServiceType {
 			get;
-		} = ServiceType;
+		} = serviceType;
 
 		public string ImplType {
 			get;
-		} = ImplType;
+		} = implType;
 
 		public InjectServiceLifetime Lifetime {
 			get;
-		} = Lifetime;
+		} = lifetime;
 	}
 }
