@@ -5,6 +5,7 @@ public sealed class InjectAttribute : Attribute {
 	public InjectServiceLifetime Lifetime {
 		get;
 	}
+
 	public Type? ServiceType {
 		get;
 	}

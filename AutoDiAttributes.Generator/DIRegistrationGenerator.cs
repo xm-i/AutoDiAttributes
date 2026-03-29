@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using System.Text;
 using System.Collections.Immutable;
 
@@ -15,8 +16,7 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
 		var registrations = context.SyntaxProvider
-			.CreateSyntaxProvider(
-				predicate: static (node, _) => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0,
+			.CreateSyntaxProvider(predicate: static (node, _) => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0,
 				transform: static (ctx, _) => GetRegistration(ctx))
 			.Where(static r => r is not null)!;
 
@@ -43,15 +43,11 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 
 			// ServiceType
 			var serviceTypeArg = attr.ConstructorArguments.Length > 1 ? attr.ConstructorArguments[1].Value as INamedTypeSymbol : null;
-			var serviceTypeName = serviceTypeArg != null
-				? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-				: symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+			var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 			var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
 			// Lifetime
-			var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw
-				? (InjectServiceLifetime)raw
-				: InjectServiceLifetime.Transient;
+			var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw ? (InjectServiceLifetime)raw : InjectServiceLifetime.Transient;
 
 			return new ServiceRegistration(serviceTypeName, implTypeName, lifetime);
 		}
@@ -80,16 +76,16 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 		var ns = SanitizeNamespace(assemblyName);
 
 		var lines = linesBuilder.ToString();
-		
+
 		var source = $$"""
-namespace {{ns}};
-public static class DIRegistration
-{
-    public static void AddGeneratedServices(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
-    {
-{{lines}}    }
-}
-""";
+			namespace {{ns}};
+			public static class DIRegistration
+			{
+			    public static void AddGeneratedServices(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+			    {
+			{{lines}}    }
+			}
+			""";
 		context.AddSource("DIRegistration.g.cs", source);
 	}
 
@@ -107,7 +103,7 @@ public static class DIRegistration
 					sb.Append('_');
 				}
 			} else {
-				if (char.IsLetterOrDigit(c) || c == '_' || (c == '.' && name[i-1] != '.')) {
+				if (char.IsLetterOrDigit(c) || c == '_' || (c == '.' && name[i - 1] != '.')) {
 					sb.Append(c);
 				} else {
 					sb.Append('_');
@@ -118,8 +114,16 @@ public static class DIRegistration
 	}
 
 	private sealed class ServiceRegistration(string ServiceType, string ImplType, InjectServiceLifetime Lifetime) {
-		public string ServiceType { get; } = ServiceType;
-		public string ImplType { get; } = ImplType;
-		public InjectServiceLifetime Lifetime { get; } = Lifetime;
+		public string ServiceType {
+			get;
+		} = ServiceType;
+
+		public string ImplType {
+			get;
+		} = ImplType;
+
+		public InjectServiceLifetime Lifetime {
+			get;
+		} = Lifetime;
 	}
 }
