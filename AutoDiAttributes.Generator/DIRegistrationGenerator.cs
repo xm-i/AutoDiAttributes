@@ -1,8 +1,8 @@
+using System.Collections.Immutable;
+using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-using System.Text;
-using System.Collections.Immutable;
 
 namespace AutoDiAttributes.Generator;
 
