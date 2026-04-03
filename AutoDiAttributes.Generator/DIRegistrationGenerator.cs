@@ -96,20 +96,19 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			return "GeneratedDI";
 		}
 		var sb = new StringBuilder(name!.Length);
-		for (var i = 0; i < name.Length; i++) {
+		var first = name[0];
+		if (char.IsLetter(first) || first == '_') {
+			sb.Append(first);
+		} else {
+			sb.Append('_');
+		}
+
+		for (var i = 1; i < name.Length; i++) {
 			var c = name[i];
-			if (i == 0) {
-				if (char.IsLetter(c) || c == '_') {
-					sb.Append(c);
-				} else {
-					sb.Append('_');
-				}
+			if (char.IsLetterOrDigit(c) || c == '_' || (c == '.' && name[i - 1] != '.')) {
+				sb.Append(c);
 			} else {
-				if (char.IsLetterOrDigit(c) || c == '_' || (c == '.' && name[i - 1] != '.')) {
-					sb.Append(c);
-				} else {
-					sb.Append('_');
-				}
+				sb.Append('_');
 			}
 		}
 		return sb.ToString();
