@@ -8,7 +8,7 @@ public class NamespaceSanitizerTests {
 	[InlineData("My.Namespace", "My.Namespace")]
 	[InlineData("123Namespace", "_23Namespace")]
 	[InlineData("My-Namespace", "My_Namespace")]
-	[InlineData("My..Namespace", "My_.Namespace")]
+	[InlineData("My..Namespace", "My._Namespace")]
 	[InlineData(".Namespace", "_Namespace")]
 	[InlineData("Namespace.", "Namespace_")]
 	[InlineData("_Namespace", "_Namespace")]
