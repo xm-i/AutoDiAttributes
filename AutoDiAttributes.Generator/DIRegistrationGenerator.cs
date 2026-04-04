@@ -38,11 +38,12 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			return null;
 		}
 
+		var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
 		foreach (var attr in symbol.GetAttributes()) {
 			if (attr.ApplicationSyntaxReference?.GetSyntax() == attributeSyntax) {
 				// ServiceType
 				var serviceTypeArg = attr.ConstructorArguments.Length > 1 ? attr.ConstructorArguments[1].Value as INamedTypeSymbol : null;
-				var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 				var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : implTypeName;
 
 				// Lifetime
