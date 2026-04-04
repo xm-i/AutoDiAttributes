@@ -61,14 +61,28 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 				continue;
 			}
 
-			var line = reg.Lifetime switch {
-				InjectServiceLifetime.Transient => $"\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddTransient<{reg.ServiceType}, {reg.ImplType}>(services);\n",
-				InjectServiceLifetime.Scoped => $"\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddScoped<{reg.ServiceType}, {reg.ImplType}>(services);\n",
-				InjectServiceLifetime.Singleton => $"\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<{reg.ServiceType}, {reg.ImplType}>(services);\n",
-				_ => null
-			};
-			if (line != null) {
-				linesBuilder.Append(line);
+			switch (reg.Lifetime) {
+				case InjectServiceLifetime.Transient:
+					linesBuilder.Append("\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddTransient<")
+								.Append(reg.ServiceType)
+								.Append(", ")
+								.Append(reg.ImplType)
+								.Append(">(services);\n");
+					break;
+				case InjectServiceLifetime.Scoped:
+					linesBuilder.Append("\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddScoped<")
+								.Append(reg.ServiceType)
+								.Append(", ")
+								.Append(reg.ImplType)
+								.Append(">(services);\n");
+					break;
+				case InjectServiceLifetime.Singleton:
+					linesBuilder.Append("\t\tglobal::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<")
+								.Append(reg.ServiceType)
+								.Append(", ")
+								.Append(reg.ImplType)
+								.Append(">(services);\n");
+					break;
 			}
 		}
 
