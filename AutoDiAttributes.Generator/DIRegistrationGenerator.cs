@@ -88,18 +88,5 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			""";
 		context.AddSource("DIRegistration.g.cs", source);
 	}
-
-	private sealed class ServiceRegistration(string serviceType, string implType, InjectServiceLifetime lifetime) {
-		public string ServiceType {
-			get;
-		} = serviceType;
-
-		public string ImplType {
-			get;
-		} = implType;
-
-		public InjectServiceLifetime Lifetime {
-			get;
-		} = lifetime;
-	}
+	private sealed record ServiceRegistration(string ServiceType, string ImplType, InjectServiceLifetime Lifetime);
 }
