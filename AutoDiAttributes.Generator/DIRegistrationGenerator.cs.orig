@@ -42,8 +42,8 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			if (attr.ApplicationSyntaxReference?.GetSyntax() == attributeSyntax) {
 				// ServiceType
 				var serviceTypeArg = attr.ConstructorArguments.Length > 1 ? attr.ConstructorArguments[1].Value as INamedTypeSymbol : null;
+				var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 				var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-				var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : implTypeName;
 
 				// Lifetime
 				var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw ? (InjectServiceLifetime)raw : InjectServiceLifetime.Transient;
