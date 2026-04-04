@@ -16,9 +16,8 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
 		var registrations = context.SyntaxProvider
-			.CreateSyntaxProvider(predicate: static (node, _) => node is ClassDeclarationSyntax {
-					AttributeLists.Count: > 0
-				},
+			.CreateSyntaxProvider(predicate: static (node, _) => node is AttributeSyntax attribute &&
+					attribute.Name.ToString() == "InjectAttribute",
 				transform: static (ctx, _) => GetRegistration(ctx))
 			.Where(static r => r is { });
 
@@ -30,28 +29,27 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 	}
 
 	private static ServiceRegistration? GetRegistration(GeneratorSyntaxContext ctx) {
-		if (ctx.Node is not ClassDeclarationSyntax cds) {
+		var attributeSyntax = (AttributeSyntax)ctx.Node;
+		if (attributeSyntax.Parent?.Parent is not ClassDeclarationSyntax cds) {
 			return null;
 		}
+
 		if (ctx.SemanticModel.GetDeclaredSymbol(cds) is not INamedTypeSymbol symbol) {
 			return null;
 		}
 
 		foreach (var attr in symbol.GetAttributes()) {
-			var name = attr.AttributeClass?.Name;
-			if (name != "InjectAttribute") {
-				continue;
+			if (attr.ApplicationSyntaxReference?.GetSyntax() == attributeSyntax) {
+				// ServiceType
+				var serviceTypeArg = attr.ConstructorArguments.Length > 1 ? attr.ConstructorArguments[1].Value as INamedTypeSymbol : null;
+				var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+				var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+				// Lifetime
+				var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw ? (InjectServiceLifetime)raw : InjectServiceLifetime.Transient;
+
+				return new(serviceTypeName, implTypeName, lifetime);
 			}
-
-			// ServiceType
-			var serviceTypeArg = attr.ConstructorArguments.Length > 1 ? attr.ConstructorArguments[1].Value as INamedTypeSymbol : null;
-			var serviceTypeName = serviceTypeArg != null ? serviceTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-			var implTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-			// Lifetime
-			var lifetime = attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int raw ? (InjectServiceLifetime)raw : InjectServiceLifetime.Transient;
-
-			return new(serviceTypeName, implTypeName, lifetime);
 		}
 		return null;
 	}
