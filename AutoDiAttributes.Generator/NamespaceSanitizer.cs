@@ -7,7 +7,7 @@ namespace AutoDiAttributes.Generator;
 
 internal static class NamespaceSanitizer {
 	public static string SanitizeNamespace(string? name) {
-		if (name is null || name.Length == 0) {
+		if (string.IsNullOrEmpty(name)) {
 			return "GeneratedDI";
 		}
 		var sb = new StringBuilder(name.Length);
