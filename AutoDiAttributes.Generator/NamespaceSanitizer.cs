@@ -7,10 +7,10 @@ namespace AutoDiAttributes.Generator;
 
 internal static class NamespaceSanitizer {
 	public static string SanitizeNamespace(string? name) {
-		if (string.IsNullOrEmpty(name)) {
+		if (name is null || name.Length == 0) {
 			return "GeneratedDI";
 		}
-		var sb = new StringBuilder(name!.Length);
+		var sb = new StringBuilder(name.Length);
 		var first = name[0];
 		sb.Append(char.IsLetter(first) || first == '_' ? first : '_');
 
