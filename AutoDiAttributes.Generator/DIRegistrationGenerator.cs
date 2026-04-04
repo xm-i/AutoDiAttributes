@@ -75,7 +75,7 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 		}
 
 		var assemblyName = compilation.AssemblyName;
-		var ns = SanitizeNamespace(assemblyName);
+		var ns = NamespaceSanitizer.SanitizeNamespace(assemblyName);
 
 		var lines = linesBuilder.ToString();
 
@@ -89,30 +89,6 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 			}
 			""";
 		context.AddSource("DIRegistration.g.cs", source);
-	}
-
-	private static string SanitizeNamespace(string? name) {
-		if (string.IsNullOrEmpty(name)) {
-			return "GeneratedDI";
-		}
-		var sb = new StringBuilder(name!.Length);
-		for (var i = 0; i < name.Length; i++) {
-			var c = name[i];
-			if (i == 0) {
-				if (char.IsLetter(c) || c == '_') {
-					sb.Append(c);
-				} else {
-					sb.Append('_');
-				}
-			} else {
-				if (char.IsLetterOrDigit(c) || c == '_' || (c == '.' && name[i - 1] != '.')) {
-					sb.Append(c);
-				} else {
-					sb.Append('_');
-				}
-			}
-		}
-		return sb.ToString();
 	}
 
 	private sealed class ServiceRegistration(string serviceType, string implType, InjectServiceLifetime lifetime) {
