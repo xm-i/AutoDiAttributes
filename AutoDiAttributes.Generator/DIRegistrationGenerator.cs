@@ -16,8 +16,15 @@ public sealed class DIRegistrationGenerator : IIncrementalGenerator {
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
 		var registrations = context.SyntaxProvider
-			.CreateSyntaxProvider(predicate: static (node, _) => node is AttributeSyntax attribute &&
-					attribute.Name.ToString() == "InjectAttribute",
+			.CreateSyntaxProvider(
+				predicate: static (node, _) => node is AttributeSyntax attribute &&
+					attribute.Name.ToString() is
+						"Inject" or
+						"InjectAttribute" or
+						"AutoDiAttributes.Inject" or
+						"AutoDiAttributes.InjectAttribute" or
+						"global::AutoDiAttributes.Inject" or
+						"global::AutoDiAttributes.InjectAttribute",
 				transform: static (ctx, _) => GetRegistration(ctx))
 			.Where(static r => r is { });
 

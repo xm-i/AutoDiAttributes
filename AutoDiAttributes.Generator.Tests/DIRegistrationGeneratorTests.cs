@@ -150,6 +150,59 @@ public class DIRegistrationGeneratorTests {
 		generatedCode.ShouldNotContain("services.Add");
 	}
 
+	/// <summary>
+	/// 属性の指定方法（省略形、フルネーム、global::付きなど）にかかわらず、正しく処理されることを検証します。
+	/// </summary>
+	[Fact]
+	public void Generator_ShouldHandleAllAttributeNamingPatterns() {
+		// Arrange
+		var source = """
+			using AutoDiAttributes;
+
+			namespace TestNamespace
+			{
+				[Inject(InjectServiceLifetime.Singleton)]
+				public class Service1 {}
+
+				[InjectAttribute(InjectServiceLifetime.Singleton)]
+				public class Service2 {}
+
+				[AutoDiAttributes.Inject(InjectServiceLifetime.Singleton)]
+				public class Service3 {}
+
+				[AutoDiAttributes.InjectAttribute(InjectServiceLifetime.Singleton)]
+				public class Service4 {}
+
+				[global::AutoDiAttributes.Inject(InjectServiceLifetime.Singleton)]
+				public class Service5 {}
+
+				[global::AutoDiAttributes.InjectAttribute(InjectServiceLifetime.Singleton)]
+				public class Service6 {}
+			}
+			""";
+
+		var compilation = CreateCompilation(source);
+		var generator = new DIRegistrationGenerator();
+		GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+
+
+		// Act
+		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var diagnostics);
+
+		// Assert
+		diagnostics.ShouldBeEmpty();
+		var runResult = driver.GetRunResult();
+		runResult.GeneratedTrees.Length.ShouldBe(1);
+
+		var generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+		generatedCode.ShouldContain("Service1");
+		generatedCode.ShouldContain("Service2");
+		generatedCode.ShouldContain("Service3");
+		generatedCode.ShouldContain("Service4");
+		generatedCode.ShouldContain("Service5");
+		generatedCode.ShouldContain("Service6");
+	}
+
 	private static Compilation CreateCompilation(string source) {
 		var syntaxTree = CSharpSyntaxTree.ParseText(source);
 		var references = new[] {
