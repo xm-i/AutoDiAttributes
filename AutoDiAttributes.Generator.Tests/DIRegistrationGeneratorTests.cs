@@ -46,12 +46,10 @@ public class DIRegistrationGeneratorTests {
 		var generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
 		generatedCode.ShouldContain("namespace TestAssembly;");
 		generatedCode.ShouldContain("public static class DIRegistration");
-		// Skip asserting full type names since formatting varies in tests vs actual build
 	}
 
 	/// <summary>
 	/// ライフタイムが指定されない場合、Transientとして登録されることを検証します。
-	/// （ただし、現在の実装ではLifetimeは必須なので、引数が不正な場合のデフォルトを検証）
 	/// </summary>
 	[Fact]
 	public void Generator_ShouldFallbackToTransient_WhenLifetimeIsInvalid() {
@@ -81,8 +79,6 @@ public class DIRegistrationGeneratorTests {
 		runResult.GeneratedTrees.Length.ShouldBe(1);
 
 		var generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-		// Enumの範囲外でもそのまま出力されるか、あるいはswitchでマッチせず出力されないかを検証
-		// 現在の実装では、switchケースにない場合は何も出力されない
 		generatedCode.ShouldNotContain("services.AddTransient");
 		generatedCode.ShouldNotContain("services.AddScoped");
 		generatedCode.ShouldNotContain("services.AddSingleton");
@@ -118,7 +114,6 @@ public class DIRegistrationGeneratorTests {
 
 		var generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
 		generatedCode.ShouldContain("namespace TestAssembly;");
-		// Skip asserting full type names
 	}
 
 	/// <summary>
@@ -151,7 +146,7 @@ public class DIRegistrationGeneratorTests {
 	}
 
 	/// <summary>
-	/// 属性の指定方法（省略形、フルネーム、global::付きなど）にかかわらず、正しく処理されることを検証します。
+	/// 属性の指定方法にかかわらず、正しく処理されることを検証します。
 	/// </summary>
 	[Fact]
 	public void Generator_ShouldHandleAllAttributeNamingPatterns() {
@@ -185,7 +180,6 @@ public class DIRegistrationGeneratorTests {
 		var generator = new DIRegistrationGenerator();
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
 
-
 		// Act
 		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var diagnostics);
 
@@ -203,16 +197,81 @@ public class DIRegistrationGeneratorTests {
 		generatedCode.ShouldContain("Service6");
 	}
 
+	/// <summary>
+	/// 1つのクラスに複数の属性が指定された場合、インターフェースと実装型の両方の登録が正しく生成されることを検証します。
+	/// </summary>
+	[Fact]
+	public void Generator_ShouldGenerateRegistrationsForBothInterfaceAndImplementation_WhenBothAttributesArePresent() {
+		// Arrange
+		var source = """
+			using AutoDiAttributes;
+
+			namespace TestNamespace
+			{
+				public interface ITestService {}
+
+				[Inject(InjectServiceLifetime.Singleton, typeof(ITestService))]
+				[Inject(InjectServiceLifetime.Transient)]
+				public class TestService : ITestService {}
+			}
+			""";
+
+		var compilation = CreateCompilation(source);
+		var generator = new DIRegistrationGenerator();
+		GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+
+		// Act
+		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var diagnostics);
+
+		// Assert
+		diagnostics.ShouldBeEmpty();
+		var runResult = driver.GetRunResult();
+		var generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+
+		// 生成されたコードに期待される登録が含まれていることを確認
+		generatedCode.ShouldContain("global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TestNamespace.ITestService, global::TestNamespace.TestService>(services);");
+		generatedCode.ShouldContain("global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddTransient<global::TestNamespace.TestService, global::TestNamespace.TestService>(services);");
+	}
+
 	private static Compilation CreateCompilation(string source) {
 		var syntaxTree = CSharpSyntaxTree.ParseText(source);
+		var attributeSource = """
+			using System;
+
+			namespace AutoDiAttributes;
+
+			[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+			public sealed class InjectAttribute : Attribute {
+				public InjectServiceLifetime Lifetime { get; }
+				public Type? ServiceType { get; }
+
+				public InjectAttribute(InjectServiceLifetime lifetime) {
+					this.Lifetime = lifetime;
+				}
+
+				public InjectAttribute(InjectServiceLifetime lifetime, Type serviceType) {
+					this.Lifetime = lifetime;
+					this.ServiceType = serviceType;
+				}
+			}
+
+			public enum InjectServiceLifetime {
+				Transient = 0,
+				Scoped = 1,
+				Singleton = 2
+			}
+			""";
+		var attributeTree = CSharpSyntaxTree.ParseText(attributeSource);
+
 		var references = new[] {
 			MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-			MetadataReference.CreateFromFile(typeof(InjectAttribute).Assembly.Location)
+			MetadataReference.CreateFromFile(typeof(Attribute).Assembly.Location),
+			MetadataReference.CreateFromFile(AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name == "System.Runtime").Location)
 		};
 
 		return CSharpCompilation.Create(
 			"TestAssembly",
-			new[] { syntaxTree },
+			new[] { syntaxTree, attributeTree },
 			references,
 			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
 		);

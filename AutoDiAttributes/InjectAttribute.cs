@@ -1,6 +1,6 @@
 namespace AutoDiAttributes;
 
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public sealed class InjectAttribute : Attribute {
 	public InjectServiceLifetime Lifetime {
 		get;
